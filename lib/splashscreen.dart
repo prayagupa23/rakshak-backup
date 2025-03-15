@@ -16,7 +16,7 @@ class _SplashScreenState extends State<SplashScreen> {
     Future.delayed(Duration(seconds: 3), () {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => Navbar()), // Navigate to HomePage after splash
+        MaterialPageRoute(builder: (context) => Feature1screen()), // Navigate to HomePage after splash
       );
     });
   }

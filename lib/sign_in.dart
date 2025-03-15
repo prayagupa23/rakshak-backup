@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:rakshak_backup_final/gender_detection/gender_detection.dart';
 import 'package:rakshak_backup_final/sign_up.dart';
 import 'package:rakshak_backup_final/custom_scaffold.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -65,7 +66,7 @@ class _SignInState extends State<SignIn> {
 
         // Navigate to the next screen (e.g., HomePage)
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => HomePage()),
+          MaterialPageRoute(builder: (context) => GenderVerification()),
         );
       } else {
         throw Exception("User data not found in Firestore.");
@@ -163,7 +164,7 @@ class _SignInState extends State<SignIn> {
                         : ElevatedButton(
                       onPressed: (){
                         Navigator.of(context).pushReplacement(
-                            MaterialPageRoute(builder: (context) => Navbar())
+                            MaterialPageRoute(builder: (context) => GenderVerification())
                         );
                       },
                       style: ElevatedButton.styleFrom(

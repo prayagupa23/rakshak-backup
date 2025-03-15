@@ -73,6 +73,8 @@ dependencies:
   cupertino_icons: ^1.0.8
   sqflite:
   image_picker:
+  flutter_launcher_icons:
+  flutter_native_splash:
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -97,6 +99,7 @@ flutter:
   assets:
     - RImages/
     - assets/images/
+    - assets/
 
   # To add assets to your application, add an assets section, like this:
   # assets:
