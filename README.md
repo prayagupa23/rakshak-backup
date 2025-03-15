@@ -1,6 +1,6 @@
 # rakshak_backup_final
 
-A new Flutter project.
+A women safety app built in flutter.
 
 ## Getting Started
 
