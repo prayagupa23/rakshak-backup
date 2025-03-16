@@ -100,7 +100,12 @@ flutter:
     - RImages/
     - assets/images/
     - assets/
-
+flutter_launcher_icons:  # This section should be below `flutter`
+  android: true
+  ios: true
+  image_path: "assets/rakshak_logo1.png"
+  adaptive_icon_foreground: "assets/rakshak_logo1.png"
+  adaptive_icon_background: "#FFFFFF"
   # To add assets to your application, add an assets section, like this:
   # assets:
   #   - images/a_dot_burr.jpeg
