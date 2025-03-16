@@ -4,15 +4,35 @@ import 'package:google_fonts/google_fonts.dart';
 import 'dart:async';
 import 'dart:io';
 import 'package:photo_analyzer/photo_analyzer.dart';
-import 'package:flutter/services.dart';
-import 'package:rakshak_backup_final/splashscreen.dart'; // Import for SystemNavigator.pop()
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:rakshak_backup_final/splashscreen.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 List<CameraDescription>? cameras;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   cameras = await availableCameras();
-  runApp(const GenderVerification());
+
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  bool hasVerifiedGender = prefs.getBool('hasVerifiedGender') ?? false;
+
+  runApp(MyApp(hasVerifiedGender: hasVerifiedGender));
+}
+
+class MyApp extends StatelessWidget {
+  final bool hasVerifiedGender;
+
+  const MyApp({super.key, required this.hasVerifiedGender});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Gender Classification App',
+      home: hasVerifiedGender ? SplashScreen() : GenderVerification(),
+    );
+  }
 }
 
 class GenderVerification extends StatelessWidget {
@@ -20,10 +40,8 @@ class GenderVerification extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Gender Classification App',
-      home: HomePage(),
+    return const Scaffold(
+      body: HomePage(),
     );
   }
 }
@@ -40,46 +58,64 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   String? capturedImagePath;
 
   @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    super.didChangeAppLifecycleState(state);
-    if (cameraController == null || cameraController?.value.isInitialized == false) {
-      return;
-    }
-    if (state == AppLifecycleState.inactive) {
-      cameraController?.dispose();
-    } else if (state == AppLifecycleState.resumed) {
-      _setupCameraController();
-    }
-  }
-
-  @override
   void initState() {
     super.initState();
     _setupCameraController();
   }
 
   Future<void> _setupCameraController() async {
-    if (cameras != null && cameras!.isNotEmpty) {
-      setState(() {
-        cameraController = CameraController(
-          cameras!.last,
-          ResolutionPreset.high,
-        );
-      });
-      cameraController?.initialize().then((_) {
-        if (!mounted) return;
+    try {
+      // Request camera permission
+      var status = await Permission.camera.request();
+
+      if (status != PermissionStatus.granted) {
+        debugPrint("Camera permission denied.");
+        return;
+      }
+
+      // Ensure cameras list is initialized
+      if (cameras == null || cameras!.isEmpty) {
+        debugPrint("No cameras available.");
+        return;
+      }
+
+      debugPrint("Initializing camera...");
+      cameraController = CameraController(
+        cameras!.first, // Use first camera
+        ResolutionPreset.high,
+        enableAudio: false, // Disable audio for better performance
+      );
+
+      // Attempt to initialize camera
+      await cameraController!.initialize();
+      if (mounted) {
         setState(() {});
-      }).catchError((Object e) {
-        debugPrint(e.toString());
-      });
+      }
+
+      debugPrint("Camera initialized successfully.");
+    } catch (e) {
+      debugPrint("Camera initialization error: $e");
     }
+  }
+
+
+
+  @override
+  void dispose() {
+    cameraController?.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (cameraController == null || !cameraController!.value.isInitialized) {
-      return const Center(child: CircularProgressIndicator());
+    if (cameraController == null) {
+      return const Center(child: Text("Error: Camera not found."));
     }
+
+    if (!cameraController!.value.isInitialized) {
+      return const Center(child: Text("Initializing Camera... Please wait"));
+    }
+
     return Scaffold(
       body: SafeArea(
         child: Column(
@@ -87,11 +123,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           children: [
             Column(
               children: [
-                Image.asset(
-                  'assets/redbull.png',
-                  width: 100,
-                  height: 100,
-                ),
+                Image.asset('assets/redbull.png', width: 100, height: 100),
                 Text(
                   "Because every detail matters...",
                   style: GoogleFonts.comfortaa(
@@ -131,10 +163,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                         }
                       },
                     ),
-                    Text(
-                      "Take Picture",
-                      style: GoogleFonts.comfortaa(fontSize: 12, color: Colors.pinkAccent),
-                    ),
+                    Text("Take Picture", style: GoogleFonts.comfortaa(fontSize: 12, color: Colors.pinkAccent)),
                   ],
                 ),
                 Column(
@@ -157,10 +186,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                         }
                       },
                     ),
-                    Text(
-                      "Next",
-                      style: GoogleFonts.comfortaa(fontSize: 12, color: Colors.pinkAccent),
-                    ),
+                    Text("Next", style: GoogleFonts.comfortaa(fontSize: 12, color: Colors.pinkAccent)),
                   ],
                 ),
               ],
@@ -192,16 +218,44 @@ class _PreviewScreenState extends State<PreviewScreen> {
   }
 
   Future<void> _detectGender() async {
+    setState(() {
+      _genderResult = "Verifying gender...";
+    });
+
     try {
+      debugPrint("Reading image file: ${widget.imagePath}");
       final imageBytes = await File(widget.imagePath).readAsBytes();
+      debugPrint("Image file read successfully.");
+
+      debugPrint("Calling gender prediction...");
       final result = await _photoAnalyzerPlugin.genderPrediction(image: imageBytes);
-      setState(() {
-        _genderResult = result.toString(); // Adjust based on plugin's output
-      });
+      debugPrint("Gender prediction result: $result");
+
+      if (mounted) {
+        setState(() {
+          _genderResult = result.toString();
+        });
+      }
     } catch (e) {
-      setState(() {
-        _genderResult = "Error detecting gender: $e";
-      });
+      debugPrint("Error in gender detection: $e");
+      if (mounted) {
+        setState(() {
+          _genderResult = "Error detecting gender: $e";
+        });
+      }
+    }
+  }
+
+
+  Future<void> _markGenderVerifiedAndProceed() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('hasVerifiedGender', true);
+
+    if (mounted) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => SplashScreen()),
+      );
     }
   }
 
@@ -234,23 +288,14 @@ class _PreviewScreenState extends State<PreviewScreen> {
             child: Column(
               children: [
                 ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.pink,
-                    minimumSize: const Size(80, 50),
-                  ),
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.pink, minimumSize: const Size(80, 50)),
                   onPressed: () async {
                     await _detectGender();
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text("Gender: $_genderResult")),
                     );
                   },
-                  child: Text(
-                    "Verify Gender",
-                    style: GoogleFonts.comfortaa(
-                      fontSize: 15,
-                      color: Colors.white,
-                    ),
-                  ),
+                  child: Text("Verify Gender", style: GoogleFonts.comfortaa(fontSize: 15, color: Colors.white)),
                 ),
                 const SizedBox(height: 25),
                 Column(
@@ -260,15 +305,7 @@ class _PreviewScreenState extends State<PreviewScreen> {
                       iconSize: 70,
                       onPressed: () async {
                         if (_genderResult.toLowerCase() == 'female') {
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => SplashScreen(),
-                            ),
-                          );
-                          Future.delayed(const Duration(milliseconds: 500), () {
-                            SystemNavigator.pop(); // Close the app
-                          });
+                          await _markGenderVerifiedAndProceed();
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(content: Text("Gender is not female. Cannot proceed.")),
@@ -276,34 +313,13 @@ class _PreviewScreenState extends State<PreviewScreen> {
                         }
                       },
                     ),
-                    Text(
-                      "Proceed",
-                      style: GoogleFonts.comfortaa(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.pink,
-                      ),
-                    ),
+                    Text("Proceed", style: GoogleFonts.comfortaa(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.pink)),
                   ],
                 ),
               ],
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class Navbar extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Navbar Screen"),
-      ),
-      body: const Center(
-        child: Text("Welcome to Navbar Screen!"),
       ),
     );
   }
