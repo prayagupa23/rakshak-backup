@@ -9,7 +9,9 @@ import 'dart:io';
 import 'dart:isolate';
 import 'package:photo_analyzer/photo_analyzer.dart';
 import 'package:image/image.dart' as img;
+import 'package:rakshak_backup_final/userOrGuardian.dart';
 import '../home_page.dart';
+import '../welcome_screen.dart';
 // import 'package:rakshak_backup_final/home_page.dart';  // Ensure Navbar is properly imported
 
 List<CameraDescription>? cameras;
@@ -71,7 +73,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     }
 
     cameraController = CameraController(
-      cameras!.first,
+      cameras!.last,
       ResolutionPreset.medium,
     );
 
@@ -148,12 +150,18 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
             Expanded(
               child: cameraController == null || !cameraController!.value.isInitialized
                   ? const Center(child: CircularProgressIndicator())
-                  : ClipRRect(
-                borderRadius: BorderRadius.circular(150), // 🔴 Make it a perfect circle
-                child: AspectRatio(
-                  aspectRatio: 1, // Ensure perfect circle aspect ratio
+                  : ClipOval(
+                child: SizedBox(
+                  height: MediaQuery.of(context).size.height * 0.45,
+                  width: MediaQuery.of(context).size.width * 0.9,
                   child: CameraPreview(cameraController!),
                 ),
+                // 🔴 Make it a perfect circle
+                // child: AspectRatio(
+                //
+                //   aspectRatio: 1, // Ensure perfect circle aspect ratio
+                //   child: CameraPreview(cameraController!),
+                // ),
               ),
             ),
             Row(
@@ -280,7 +288,7 @@ class _PreviewScreenState extends State<PreviewScreen> {
             ),
             onPressed: isFemale
                 ? () {
-              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => Navbar()));
+              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => WelcomeScreen()));
             }
                 : null, // 🔴 Button disabled if not Female
             child: const Text("Next", style: TextStyle(fontSize: 18, color: Colors.white)),
