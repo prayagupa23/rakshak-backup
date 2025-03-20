@@ -40,3 +40,4 @@ class PharmacyCard extends StatelessWidget {
     );
   }
 }
+
