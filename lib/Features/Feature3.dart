@@ -1,33 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:rakshak_backup_final/home_page.dart';
+import 'package:rakshak_backup_final/userOrGuardian.dart';
 import 'package:rakshak_backup_final/welcome_screen.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../customButton.dart';
-import 'package:rakshak_backup_final/sign_in.dart'; // Import Login Screen
+import 'package:rakshak_backup_final/gender_detection/gender_detection.dart';
 
+import '../splashscreen.dart';
 class Feature3screen extends StatefulWidget {
   const Feature3screen({super.key});
 
   @override
-  State<Feature3screen> createState() => _Feature3screenState();
+  State<Feature3screen> createState() => _Feature1screenState();
 }
 
-class _Feature3screenState extends State<Feature3screen> {
-  Future<void> _completeFeaturesAndProceed(BuildContext context) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('hasSeenFeatures', true); // Mark Features as Seen
-
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => WelcomeScreen()), // Move to Login
-    );
-  }
-
+class _Feature1screenState extends State<Feature3screen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
         child: Stack(
           children: [
+            // Main content
             Center(
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 25, horizontal: 35),
@@ -35,7 +28,7 @@ class _Feature3screenState extends State<Feature3screen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Image.asset(
-                      'assets/images/maps.png',
+                      'RImages/deathImage.jpeg',
                       height: 150,
                     ),
                     const SizedBox(height: 20),
@@ -61,6 +54,7 @@ class _Feature3screenState extends State<Feature3screen> {
                 ),
               ),
             ),
+            // Previous button at bottom-left corner
             Align(
               alignment: Alignment.bottomLeft,
               child: Padding(
@@ -77,6 +71,7 @@ class _Feature3screenState extends State<Feature3screen> {
                 ),
               ),
             ),
+            // Next button at bottom-right corner
             Align(
               alignment: Alignment.bottomRight,
               child: Padding(
@@ -85,7 +80,12 @@ class _Feature3screenState extends State<Feature3screen> {
                   width: 120,
                   height: 50,
                   child: CustomButton(
-                    onPressed: () => _completeFeaturesAndProceed(context), // Proceed to Login
+                    onPressed: () {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(builder: (context) => userOrGuardian()),
+                      );// Navigate to the next screen
+                    },
                     text: "Next",
                   ),
                 ),
