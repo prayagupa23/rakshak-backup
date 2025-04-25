@@ -4,6 +4,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:rakshak_backup_final/ChatList.dart';
 import 'package:rakshak_backup_final/WaySecure.dart';
 import 'package:rakshak_backup_final/addContacts.dart';
 import 'package:rakshak_backup_final/profile_page.dart';
@@ -20,11 +21,13 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:rakshak_backup_final/splashscreen.dart';
 import 'contactsm.dart';
 import 'dbservices.dart';
+import 'screens/ai_chat_screen.dart';
 
 // import 'package:firebase_auth/firebase_auth.dart';
 void main() {
   runApp(HomePage());
 }
+
 class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -41,12 +44,11 @@ class HomePage extends StatelessWidget {
 //   await FirebaseAuth.instance.signOut();
 // }
 
-
-
 class Navbar extends StatefulWidget {
   @override
   _NavbarState createState() => _NavbarState();
 }
+
 class _NavbarState extends State<Navbar> {
   int _currentIndex = 0;
 
@@ -54,7 +56,6 @@ class _NavbarState extends State<Navbar> {
     CustomCardsScreen(),
     SettingsPage(),
     ProfilePage(),
-
   ];
 
   final _telephonySMS = TelephonySMS();
@@ -148,8 +149,7 @@ class _NavbarState extends State<Navbar> {
       Fluttertoast.showToast(
         msg: _userLocation != null
             ? 'Location sent to all contacts via SMS!'
-            : 'Fallback message sent to all contacts via SMS!'
-        ,
+            : 'Fallback message sent to all contacts via SMS!',
         toastLength: Toast.LENGTH_LONG,
         gravity: ToastGravity.BOTTOM,
         backgroundColor: Colors.pink.shade50,
@@ -167,6 +167,7 @@ class _NavbarState extends State<Navbar> {
       );
     }
   }
+
   void _triggerSOS(BuildContext context) async {
     await _sendLocationSMS(context);
   }
@@ -227,10 +228,11 @@ class _NavbarState extends State<Navbar> {
     speechToText.listen(onResult: _onSpeechResult);
   }
 
-
   void _onSpeechResult(SpeechRecognitionResult result) {
     print("Recognized words: ${result.recognizedWords}");
-    if (result.recognizedWords.toLowerCase().contains("sos")) {
+    if (result.recognizedWords.toLowerCase().contains("sos") ||
+        result.recognizedWords.toLowerCase().contains("bachao") ||
+        result.recognizedWords.toLowerCase().contains("help")) {
       Fluttertoast.showToast(
         msg: "Voice recognized: ${result.recognizedWords}",
         toastLength: Toast.LENGTH_SHORT,
@@ -262,7 +264,6 @@ class _NavbarState extends State<Navbar> {
           });
         },
       ),
-
     );
   }
 }
@@ -283,7 +284,7 @@ class Locators extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.only(left: 25,right: 25),
+      padding: const EdgeInsets.only(left: 25, right: 25),
       height: 90,
       width: MediaQuery.of(context).size.width,
       child: ListView(
@@ -315,16 +316,28 @@ class CustomCardsScreen extends StatelessWidget {
         title: Column(
           children: [
             Center(
-              child: Text('Rakshak',style: GoogleFonts.italiana(
-                fontSize: 30,
-                color: Color(0xFF78143C),
-                fontStyle: FontStyle.normal,
-                fontWeight: FontWeight.bold,
-              ),
+              child: Text(
+                'Rakshak',
+                style: GoogleFonts.italiana(
+                  fontSize: 30,
+                  color: Color(0xFF78143C),
+                  fontStyle: FontStyle.normal,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ],
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const AIChatScreen()),
+          );
+        },
+        backgroundColor: Color(0xFF78143C),
+        child: Icon(Icons.smart_toy, color: Colors.pink.shade50),
       ),
       body: Container(
         color: Colors.white,
@@ -332,7 +345,9 @@ class CustomCardsScreen extends StatelessWidget {
           child: Center(
             child: Column(
               children: [
-                SizedBox(height: 15,),
+                SizedBox(
+                  height: 15,
+                ),
                 Locators(),
                 SizedBox(height: 10),
                 customCard(
@@ -350,7 +365,7 @@ class CustomCardsScreen extends StatelessWidget {
                   description1: 'Enables users to',
                   description2: 'stay connected',
                   imagePath: 'RImages/communitychat.png',
-                  onTapPage: CommunityChatPage(),
+                  onTapPage: ChatListScreen(),
                 ),
                 SizedBox(height: 9),
                 customCard(
@@ -419,7 +434,6 @@ class CustomCardsScreen extends StatelessWidget {
                     style: GoogleFonts.comfortaa(
                       fontSize: 15,
                       fontStyle: FontStyle.normal,
-
                     ),
                   ),
                   Text(
@@ -427,7 +441,6 @@ class CustomCardsScreen extends StatelessWidget {
                     style: GoogleFonts.comfortaa(
                       fontSize: 15.5,
                       fontStyle: FontStyle.normal,
-
                     ),
                   ),
                 ],
@@ -448,7 +461,8 @@ class CustomCardsScreen extends StatelessWidget {
 }
 
 class SettingsPage extends StatelessWidget {
-  Future<void> requestPermission(BuildContext context, Permission permission) async {
+  Future<void> requestPermission(
+      BuildContext context, Permission permission) async {
     final status = await permission.status;
     if (status.isGranted) {
       showDialog(
@@ -484,12 +498,14 @@ class SettingsPage extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.white,
         title: Center(
-          child: Text('Settings',style: GoogleFonts.italiana(
-            fontSize: 30,
-            color: Color(0xFF78143C),
-            fontStyle: FontStyle.normal,
-            fontWeight: FontWeight.bold,
-          ),
+          child: Text(
+            'Settings',
+            style: GoogleFonts.italiana(
+              fontSize: 30,
+              color: Color(0xFF78143C),
+              fontStyle: FontStyle.normal,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
       ),
@@ -500,7 +516,6 @@ class SettingsPage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
               // Text(
               //   "Manage Permissions",
               //   style: GoogleFonts.comfortaa(
@@ -524,31 +539,42 @@ class SettingsPage extends StatelessWidget {
                 description: 'Used for gender detection in app.',
                 onPressed: () => requestPermission(context, Permission.camera),
               ),
-              SizedBox(height: 2,),
+              SizedBox(
+                height: 2,
+              ),
               buildPermissionTile(
                 context,
                 icon: Icons.mic,
                 title: 'Microphone',
                 description: 'Required for voice recognition.',
-                onPressed: () => requestPermission(context, Permission.microphone),
+                onPressed: () =>
+                    requestPermission(context, Permission.microphone),
               ),
-              SizedBox(height: 2,),
+              SizedBox(
+                height: 2,
+              ),
               buildPermissionTile(
                 context,
                 icon: Icons.location_on,
                 title: 'Location',
                 description: 'Required for real-time location tracking.',
-                onPressed: () => requestPermission(context, Permission.location),
+                onPressed: () =>
+                    requestPermission(context, Permission.location),
               ),
-              SizedBox(height: 2,),
+              SizedBox(
+                height: 2,
+              ),
               buildPermissionTile(
                 context,
                 icon: Icons.notifications,
                 title: 'Notification',
                 description: 'Required to send notifications.',
-                onPressed: () => requestPermission(context, Permission.notification),
+                onPressed: () =>
+                    requestPermission(context, Permission.notification),
               ),
-              SizedBox(height: 100,),
+              SizedBox(
+                height: 100,
+              ),
             ],
           ),
         ),
@@ -584,7 +610,9 @@ class SettingsPage extends StatelessWidget {
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                SizedBox(height: 6,),
+                SizedBox(
+                  height: 6,
+                ),
                 if (description.isNotEmpty)
                   Text(
                     description,
@@ -596,7 +624,9 @@ class SettingsPage extends StatelessWidget {
               ],
             ),
           ),
-          SizedBox(width: 4,),
+          SizedBox(
+            width: 4,
+          ),
           customButton(
             onPressed: onPressed,
             title: "Request",
